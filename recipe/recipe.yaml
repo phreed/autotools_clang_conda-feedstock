@@ -1,35 +1,45 @@
 package:
   name: autotools_clang_conda
-  version: 0.0.12
+  version: 0.0.13
 
 build:
   number: 0
-  skip: not win
-  script: build.nu
+  skip:
+    - not win
+  script:
+    - if: win
+      then: build.nu
 
 requirements:
+  build:
+    - if: win
+      then: nushell
   run:
-    - clang
-    - clangxx
-    - llvm-tools
-    - lld
-    - posix
-    - m2-automake-wrapper
-    - m2-libtool
-    - m2-autoconf
-    - m2-make
-    - m2-findutils
-    - m2-m4
-    - m2-bash
-    - m2-sed
-    - m2-base
-    - m2-diffutils
-    - cmake
-    - nushell
+    - if: win
+      then:
+        - clang
+        - clangxx
+        - llvm-tools
+        - lld
+        - posix
+        - m2-automake-wrapper
+        - m2-libtool
+        - m2-autoconf
+        - m2-make
+        - m2-findutils
+        - m2-m4
+        - m2-bash
+        - m2-sed
+        - m2-base
+        - m2-diffutils
+        - cmake
+        - nushell
 
 tests:
-  - script:
-      - if not (($env.LIBRARY_BIN + "\run_autotools_clang_conda_build.nu") | path exists) { exit 1 } # [win]
+  - if: win
+    then:
+      script:
+        - if not (($env.LIBRARY_BIN + "\autotools.nu") | path exists) { exit 1 }
 
 about:
   homepage: https://github.com/conda-forge/autotools_clang_conda-feedstock
@@ -37,18 +47,19 @@ about:
   documentation: https://github.com/conda-forge/autotools_clang_conda-feedstock/blob/main/README.md
   license: BSD-3-Clause
   license_file: LICENSE
-  summary: Modern Nushell-based scripts to compile autotools projects on Windows using Clang and LLVM tools
+  summary: Nushell autotools module for compiling projects on Windows using Clang and LLVM tools
   description: |
-    This package installs clang compiler, lld linker, tools like llvm-ranlib, llvm-ar,
-    bash, autoconf to compile autotools on windows. Resulting packages will be MSVC compatible.
-    To use this package, in recipe.yaml:
+    This package provides a comprehensive Nushell module for compiling autotools-based projects
+    on Windows using Clang compiler, LLD linker, and LLVM tools. The resulting packages are
+    MSVC compatible.
 
     Features:
-    - Modern Nushell-based build scripts (replacing legacy batch/bash scripts)
+    - Single autotools.nu module with comprehensive build functions
     - Clang/LLVM toolchain with MSVC compatibility
     - Automated libtool patching for Windows DLL creation
-    - Support for custom build script names
+    - Library prefix handling and DLL renaming
     - Comprehensive error handling and logging
+    - Both direct Nushell and bash compatibility modes
 
     ## Usage
 
@@ -56,27 +67,44 @@ about:
 
     ```yaml
     build:
-      skip: win and vc<14
+      skip:
+        - win and vc<14
 
     requirements:
       build:
         - {{ compiler('c') }}        # Windows CL compiler for env setup
-        - autotools_clang_conda      # [win]
-        - llvm-openmp               # [win] (only if OpenMP is used)
+        - if: win
+          then:
+            - autotools_clang_conda
+            - llvm-openmp            # (only if OpenMP is used)
     ```
 
     ## Windows Build Scripts
 
-    Basic usage:
+    Basic usage with autotools module:
     ```nushell
-    nu %BUILD_PREFIX%\Library\bin\run_autotools_clang_conda_build.nu
-    if $env.LAST_EXIT_CODE != 0 { exit 1 }
+    use %BUILD_PREFIX%\Library\bin\autotools.nu
+    autotools build
     ```
 
     Custom build script:
     ```nushell
-    nu %BUILD_PREFIX%\Library\bin\run_autotools_clang_conda_build.nu custom_build.sh
-    if $env.LAST_EXIT_CODE != 0 { exit 1 }
+    use %BUILD_PREFIX%\Library\bin\autotools.nu
+    autotools build custom_build.sh
+    ```
+
+    Bash compatibility mode:
+    ```nushell
+    use %BUILD_PREFIX%\Library\bin\autotools.nu
+    autotools build-with-bash build.sh
+    ```
+
+    Individual functions:
+    ```nushell
+    use %BUILD_PREFIX%\Library\bin\autotools.nu
+    autotools setup-environment
+    autotools patch-libtool
+    autotools create-def-file mylib.def obj1.o obj2.o lib1.lib
     ```
 
     ## Unix Build Scripts
@@ -88,8 +116,8 @@ about:
     make install
     ```
 
-    The `patch_libtool` function is automatically available and should be called after
-    configure when building on Windows to ensure proper DLL creation.
+    The autotools module provides all necessary functions for Windows builds including
+    environment setup, libtool patching, and library handling.
 
 extra:
   recipe-maintainers:
