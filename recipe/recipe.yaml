@@ -1,0 +1,97 @@
+package:
+  name: autotools_clang_conda
+  version: 0.0.12
+
+build:
+  number: 0
+  skip: not win
+  script: build.nu
+
+requirements:
+  run:
+    - clang
+    - clangxx
+    - llvm-tools
+    - lld
+    - posix
+    - m2-automake-wrapper
+    - m2-libtool
+    - m2-autoconf
+    - m2-make
+    - m2-findutils
+    - m2-m4
+    - m2-bash
+    - m2-sed
+    - m2-base
+    - m2-diffutils
+    - cmake
+    - nushell
+
+tests:
+  - script:
+      - if not (($env.LIBRARY_BIN + "\run_autotools_clang_conda_build.nu") | path exists) { exit 1 } # [win]
+
+about:
+  homepage: https://github.com/conda-forge/autotools_clang_conda-feedstock
+  repository: https://github.com/conda-forge/autotools_clang_conda-feedstock
+  documentation: https://github.com/conda-forge/autotools_clang_conda-feedstock/blob/main/README.md
+  license: BSD-3-Clause
+  license_file: LICENSE
+  summary: Modern Nushell-based scripts to compile autotools projects on Windows using Clang and LLVM tools
+  description: |
+    This package installs clang compiler, lld linker, tools like llvm-ranlib, llvm-ar,
+    bash, autoconf to compile autotools on windows. Resulting packages will be MSVC compatible.
+    To use this package, in recipe.yaml:
+
+    Features:
+    - Modern Nushell-based build scripts (replacing legacy batch/bash scripts)
+    - Clang/LLVM toolchain with MSVC compatibility
+    - Automated libtool patching for Windows DLL creation
+    - Support for custom build script names
+    - Comprehensive error handling and logging
+
+    ## Usage
+
+    Add to your recipe.yaml:
+
+    ```yaml
+    build:
+      skip: win and vc<14
+
+    requirements:
+      build:
+        - {{ compiler('c') }}        # Windows CL compiler for env setup
+        - autotools_clang_conda      # [win]
+        - llvm-openmp               # [win] (only if OpenMP is used)
+    ```
+
+    ## Windows Build Scripts
+
+    Basic usage:
+    ```nushell
+    nu %BUILD_PREFIX%\Library\bin\run_autotools_clang_conda_build.nu
+    if $env.LAST_EXIT_CODE != 0 { exit 1 }
+    ```
+
+    Custom build script:
+    ```nushell
+    nu %BUILD_PREFIX%\Library\bin\run_autotools_clang_conda_build.nu custom_build.sh
+    if $env.LAST_EXIT_CODE != 0 { exit 1 }
+    ```
+
+    ## Unix Build Scripts
+
+    ```bash
+    ./configure --prefix=$PREFIX
+    [[ "$target_platform" == "win-64" ]] && patch_libtool
+    make -j${CPU_COUNT}
+    make install
+    ```
+
+    The `patch_libtool` function is automatically available and should be called after
+    configure when building on Windows to ensure proper DLL creation.
+
+extra:
+  recipe-maintainers:
+    - isuruf
+    - phreed
